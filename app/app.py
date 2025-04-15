@@ -1,6 +1,45 @@
+import mysql.connector
 from flask import Flask,request,jsonify,render_template
 
 app = Flask(__name__)
+# 文字化けめ、、
+app.config['JSON_AS_ASCII'] = False
+
+# MySQLとのコネクションを作成する関数
+def get_db_connection():
+    conn = mysql.connector.connect(
+        host='db',
+        user='user',
+        password='password',
+        database='todo_db'
+    )
+    return conn
+
+# tasksテーブルにデータを挿入する関数
+def insert_task(content, completed=False):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    sql = "INSERT INTO tasks (content, completed) VALUES (%s, %s)"
+    cursor.execute(sql, (content, completed))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+# クライアントからタスクを受け取る関数
+@app.route('/add-task', methods=['POST'])
+def add_task():
+    data = request.get_json()
+    if not data or 'content' not in data:
+        return jsonify({"error": "contentが必要です"}), 400
+
+    content = data['content']
+    completed = data.get('completed', False)
+
+    try:
+        insert_task(content, completed)
+        return jsonify({"status": "success", "message": "タスクを追加しました"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/')
 def index01():

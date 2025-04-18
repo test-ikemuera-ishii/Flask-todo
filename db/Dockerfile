@@ -1,4 +1,4 @@
-FROM mysql:8.3
+FROM mysql:8.0
 
 ENV MYSQL_ROOT_PASSWORD=root
 ENV MYSQL_DATABASE=todo_db
@@ -7,4 +7,4 @@ ENV MYSQL_PASSWORD=password
 
 COPY init.sql /docker-entrypoint-initdb.d/init.sql
 
-EXPOSE 3306
+COPY my.cnf /etc/mysql/conf.d/my.cnf

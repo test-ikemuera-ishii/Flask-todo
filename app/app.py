@@ -8,7 +8,7 @@ app.config['JSON_AS_ASCII'] = False
 # MySQLとのコネクションを作成する関数
 def get_db_connection():
     conn = mysql.connector.connect(
-        host='db',
+        host='localhost',
         user='user',
         password='password',
         database='todo_db'
@@ -41,9 +41,51 @@ def add_task():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+#タスク一覧取得関数
+@app.route('/tasks', methods=['GET'])
+def get_tasks():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM tasks")
+    tasks = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(tasks)
+
+#タスク編集関数
+@app.route('/edit-task/<int:task_id>', methods=['PUT'])
+def edit_task(task_id):
+    data = request.get_json()
+    content = data.get("content")
+    completed = data.get("completed", False)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE tasks SET content=%s, completed=%s WHERE id=%s", (content, completed, task_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "タスクを更新しました"})
+
+#タスク削除関数
+@app.route('/delete-task/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tasks WHERE id=%s", (task_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "タスクを削除しました"})
+
+
+
+
+
+
 @app.route('/')
-def index01():
-    return 'Hello World'
+def index():
+    return render_template("index.html")
 
 @app.route('/test')
 def test():
@@ -74,7 +116,7 @@ def json_api():
     return jsonify(response),200
 
 @app.route("/html",methods=["GET"])
-def index():
+def index01():
     return render_template("index.html")
 
 

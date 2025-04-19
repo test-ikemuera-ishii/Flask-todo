@@ -2,10 +2,110 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Flaskテンプレート</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDoアプリ</title>
+    <script>
+        // タスク一覧を取得して表示する関数
+        async function fetchTasks() {
+            const response = await fetch('/tasks');
+            const tasks = await response.json();
+            const tasksList = document.getElementById('task-list');
+            tasksList.innerHTML = ''; // 現在のタスクをクリア
+
+            tasks.forEach(task => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    ${task.content} <span>(${task.completed ? '完了' : '未完了'})</span>
+                    <button onclick="editTask(${task.id})">編集</button>
+                    <button onclick="deleteTask(${task.id})">削除</button>
+                `;
+                tasksList.appendChild(li);
+            });
+        }
+
+        // タスクを追加する関数
+        async function addTask() {
+            const content = document.getElementById('task-content').value;
+            if (!content) {
+                alert("タスク内容を入力してください");
+                return;
+            }
+
+            const response = await fetch('/add-task', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content })
+            });
+
+            if (response.ok) {
+                fetchTasks();  // タスク一覧を再読み込み
+                document.getElementById('task-content').value = '';  // 入力フィールドをリセット
+            } else {
+                alert("タスク追加に失敗しました");
+            }
+        }
+
+        // タスクを編集する関数
+        async function editTask(taskId) {
+            const newContent = prompt("新しいタスク内容を入力してください");
+            if (!newContent) {
+                return;
+            }
+
+            const response = await fetch(`/edit-task/${taskId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content: newContent })
+            });
+
+            if (response.ok) {
+                fetchTasks();  // タスク一覧を再読み込み
+            } else {
+                alert("タスク編集に失敗しました");
+            }
+        }
+
+        // タスクを削除する関数
+        async function deleteTask(taskId) {
+            const confirmDelete = confirm("本当に削除しますか?");
+            if (!confirmDelete) {
+                return;
+            }
+
+            const response = await fetch(`/delete-task/${taskId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                fetchTasks();  // タスク一覧を再読み込み
+            } else {
+                alert("タスク削除に失敗しました");
+            }
+        }
+
+        // ページロード時にタスク一覧を取得
+        window.onload = function() {
+            fetchTasks();
+        }
+    </script>
 </head>
 <body>
-    <h1>test</h1>
+    <h1>ToDoアプリ</h1>
+
+    <!-- タスク追加フォーム -->
+    <input type="text" id="task-content" placeholder="タスクを入力">
+    <button onclick="addTask()">タスクを追加</button>
+
+    <!-- タスク一覧 -->
+    <ul id="task-list">
+        <!-- タスクがここに表示される -->
+    </ul>
 </body>
 </html>
+
+
 
